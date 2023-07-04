@@ -10,7 +10,6 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
-app.Map("/health", () => "error 204 - No data");
 app.Map("/", () => "Start page");
 
 app.Run();
