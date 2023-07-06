@@ -16,6 +16,9 @@ namespace RestProjectController.Models
         public string Password { get; set; } = String.Empty!;
         public bool isDeleted { get; set; } = false;
 
+        public DateTime CreatedAt { get; set; }
+        public DateTime PasswordChangedAt { get; set; }
+
         public static async Task<string> Get()
         {
             var db = client.GetDatabase("RestApp");
@@ -37,12 +40,37 @@ namespace RestProjectController.Models
             var db = client.GetDatabase("RestApp");
             var collection = db.GetCollection<BsonDocument>("Account");
             
-            if (await collection.CountDocumentsAsync(new BsonDocument { { "Name", name }, { "Login", login }, { "Password", password } }) == 0)
+            if (await collection.CountDocumentsAsync(new BsonDocument { { "Login", login } }) == 0)
             {
-                await collection.InsertOneAsync(new BsonDocument { { "Name", name }, { "Login", login }, { "Password", password } });
+                await collection.InsertOneAsync(new BsonDocument { { "Name", name }, { "Login", login }, { "Password", password }, { "CreatedAt", DateTime.Now}, {"isDeleted", false } });
             }
             var Flat = await collection.Find(new BsonDocument { { "Name", name }, { "Login", login }, { "Password", password } }).ToListAsync();
             return Flat.ToJson();
+        }
+        public static async Task<string> DeleteAcc(string id)
+        {
+            var db = client.GetDatabase("RestApp");
+            var collection = db.GetCollection<BsonDocument>("Account");
+
+            if (await collection.CountDocumentsAsync(new BsonDocument { { "_id", ObjectId.Parse(id) } }) != 0)
+            {
+                await collection.UpdateOneAsync(new BsonDocument { { "_id", ObjectId.Parse(id) } }, Builders<BsonDocument>.Update.Set("isDeleted", true));
+            }
+            var acc = await collection.Find(new BsonDocument { { "_id", ObjectId.Parse(id) } }).ToListAsync();
+            return acc.ToJson();
+        }
+        public static async Task<string> ChangePassword(string login, string old_pass, string new_pass)
+        {
+            var db = client.GetDatabase("RestApp");
+            var collection = db.GetCollection<BsonDocument>("Account");
+
+            if (await collection.CountDocumentsAsync(new BsonDocument { { "Login", login }, {"Password", old_pass } }) != 0)
+            {
+                await collection.UpdateOneAsync(new BsonDocument { { "Login", login } }, Builders<BsonDocument>.Update.Set("Password", new_pass));
+                await collection.UpdateOneAsync(new BsonDocument { { "Login", login } }, Builders<BsonDocument>.Update.Set("PasswordChangedAt", DateTime.Now));
+            }
+            var acc = await collection.Find(new BsonDocument { { "Login", login } }).ToListAsync();
+            return acc.ToJson();
         }
     }
 }

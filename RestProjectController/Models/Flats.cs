@@ -1,6 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 
 namespace RestProjectController.Models
 {
@@ -9,31 +10,31 @@ namespace RestProjectController.Models
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         static MongoClient client = new MongoClient("mongodb://192.168.1.88:1717");
-        public string? Id { get; set; }
+        [JsonProperty("_id")]
+        public ObjectId? Id { get; set; }
 
+        [JsonProperty("Name")]
         public string Name { get; set; } = null!;
-        public bool fullFlat { get; set; } = false!;
-        public int SleepPlaces { get; set; } = 1!;
-        public decimal Price { get; set; }
-        public DateTime? EditedDate { get; set; }
-        public DateTime? CreationDate { get; set; }
-        public bool isDeleted { get; set; } = false;
-        public Flats() { }
-        public Flats(string id)
-        {
-            var db = client.GetDatabase("RestApp");
-            var collection = db.GetCollection<Flats>("Flats");
 
-            var obj = collection.Find(new BsonDocument("_id", ObjectId.Parse(id))).ToList();
-            this.Name = obj[0].Name;
-            this.Id = obj[0].Id;
-            this.isDeleted = obj[0].isDeleted;
-            this.fullFlat = obj[0].fullFlat;
-            this.SleepPlaces = obj[0].SleepPlaces;
-            this.Price = obj[0].Price;
-            this.CreationDate = obj[0].CreationDate;
-            this.EditedDate = obj[0].EditedDate;
-        }
+        [JsonProperty("Full")]
+        public bool fullFlat { get; set; } = false!;
+
+        [JsonProperty("Sleep")]
+        public int SleepPlaces { get; set; } = 1!;
+
+        [JsonProperty("Price")]
+        public decimal Price { get; set; }
+
+        [JsonProperty("EditedDate")]
+        public DateTime? EditedDate { get; set; }
+
+        [JsonProperty("CreationDate")]
+        public DateTime? CreationDate { get; set; }
+
+        [JsonProperty("isDeleted")]
+        public bool isDeleted { get; set; } = false;
+
+        public static Flats FromJSON(string jscode) => JsonConvert.DeserializeObject<Flats>(jscode);
 
         public static async Task<string> Get()
         {
@@ -80,18 +81,25 @@ namespace RestProjectController.Models
             var db = client.GetDatabase("RestApp");
             var collection = db.GetCollection<BsonDocument>("Flats");
 
+            bool test; int sl_test; decimal cost_test;
+
+            if (bool.TryParse(full, out test) == false) return "error";
+            if (int.TryParse(sleep, out sl_test) == false) return "error";
+            if (decimal.TryParse(cost, out cost_test) == false) return "error";
+
             if (await collection.CountDocumentsAsync(new BsonDocument { { "Name", name }, { "fullFlat", Convert.ToBoolean(full) }, { "SleepPlaces", int.Parse(sleep) }, { "Price", Convert.ToDecimal(cost) } }) == 0)
             {
-                await collection.InsertOneAsync(new BsonDocument { 
-                    { "Name", name }, 
-                    { "fullFlat", Convert.ToBoolean(full) }, 
-                    { "SleepPlaces", int.Parse(sleep) }, 
-                    { "Price", Convert.ToDecimal(cost) }, 
-                    { "CreationDate", DateTime.Now }, 
-                    { "EditedDate", DateTime.Now }, 
+                await collection.InsertOneAsync(new BsonDocument {
+                    { "Name", name },
+                    { "fullFlat", Convert.ToBoolean(full) },
+                    { "SleepPlaces", int.Parse(sleep) },
+                    { "Price", Convert.ToDecimal(cost) },
+                    { "CreationDate", DateTime.Now },
+                    { "EditedDate", DateTime.Now },
 
                     { "isDeleted", false }});
             }
+            else return "error";
             var Flat = await collection.Find(new BsonDocument { { "Name", name }, { "fullFlat", Convert.ToBoolean(full) }, { "SleepPlaces", int.Parse(sleep) }, { "Price", Convert.ToDecimal(cost) }, { "isDeleted", false } }).ToListAsync();
             return Flat.ToJson();
         }
