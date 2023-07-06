@@ -1,0 +1,11 @@
+version: '3.1'
+services:
+  mongo:
+    image: mongo
+    container_name: mongo_container
+    restart: always
+    ports:
+      - "1717:27017"
+    volumes:
+      - ./mongodata:/data/db
+    command: --wiredTigerCacheSizeGB 1.5

@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MongoDB.Driver;
-using MongoDB.Bson;
 
 namespace RestProjectController.Controllers
 {
@@ -8,60 +6,29 @@ namespace RestProjectController.Controllers
     [Route("[controller]")]
     public class FlatsController : ControllerBase
     {
-        static MongoClient client = new MongoClient("mongodb://localhost:27017");
         public string Index()
         {
             return "xd";
         }
         [HttpGet("all")]
-        public async Task<string> Get()
-        {
-            var db = client.GetDatabase("RestApp");
-            var collection = db.GetCollection<BsonDocument>("Flats");
+        public async Task<string> Get() => await Models.Flats.Get();
 
-            var Flat = await collection.Find("{}").ToListAsync();
-            return Flat.ToJson();
-        }
-        [HttpGet("ByName/{name}")]
-        public async Task<string> GetByName(string name)
-        {
-            var db = client.GetDatabase("RestApp");
-            var collection = db.GetCollection<BsonDocument>("Flats");
+        [HttpGet("ByName:{name}")]
+        public async Task<string> GetByName(string name) => await Models.Flats.GetByName(name);
+        [HttpGet("{id}")]
+        public async Task<string> GetByIndex(string id) => await Models.Flats.GetByID(id);
 
-            var Flat = await collection.Find(new BsonDocument("Name", name)).ToListAsync();
-            return Flat.ToJson();
-        }
-        [HttpGet("BySleep/{count}")]
-        public async Task<string> GetBySP(string count)
-        {
-            var db = client.GetDatabase("RestApp");
-            var collection = db.GetCollection<BsonDocument>("Flats");
+        [HttpGet("BySleep:{count}")]
+        public async Task<string> GetBySP(string count) => await Models.Flats.GetBySP(count);
+        [HttpGet("ByFull:{val}")]
+        public async Task<string> GetByFull(string val) => await Models.Flats.GetByFull(val);
 
-            var Flat = await collection.Find(new BsonDocument("SleepPlaces", int.Parse(count))).ToListAsync();
-            return Flat.ToJson();
-        }
-        [HttpGet("ByFull/{val}")]
-        public async Task<string> GetByFull(string val)
-        {
-            var db = client.GetDatabase("RestApp");
-            var collection = db.GetCollection<BsonDocument>("Flats");
+        [HttpPost("Add/{name}/{full}/{sleep}/{cost}")]
+        public async Task<string> AddKv(string name,string full, string sleep, string cost) => await Models.Flats.AddKv(name, full, sleep, cost);
+        [HttpPatch("Delete:{id}")]
+        public async Task<string> DeleteKv(string id) => await Models.Flats.DeleteKv(id);
 
-            var Flat = await collection.Find(new BsonDocument("fullFlat", Convert.ToBoolean(val))).ToListAsync();
-            return Flat.ToJson();
-        }
-        [HttpGet("Add/{name}/{full}/{sleep}/{cost}")] //пока get-запрос для проверки и тестового заполнения бд, потом перепишу его в post
-        public async Task<string> AddKv(string name,string full, string sleep, string cost)
-        {
-            var db = client.GetDatabase("RestApp");
-            var collection = db.GetCollection<BsonDocument>("Flats");
-
-            if (await collection.CountDocumentsAsync(new BsonDocument { { "Name", name }, { "fullFlat", Convert.ToBoolean(full) }, { "SleepPlaces", int.Parse(sleep) }, { "Price", Convert.ToDecimal(cost) } }) == 0)
-            {
-                await collection.InsertOneAsync(new BsonDocument{ { "Name", name},{ "fullFlat",Convert.ToBoolean(full)},{ "SleepPlaces", int.Parse(sleep)}, {"Price", Convert.ToDecimal(cost) } });
-            }
-            var users = await collection.Find("{}").ToListAsync();
-            var Flat = await collection.Find(new BsonDocument { { "Name", name }, { "fullFlat", Convert.ToBoolean(full) }, { "SleepPlaces", int.Parse(sleep) }, { "Price", Convert.ToDecimal(cost) } }).ToListAsync();
-            return Flat.ToJson();
-        }
+        [HttpPatch("Update:{id};{name};{full};{sleep};{cost}")]
+        public async Task<string> PutKv(string id, string name, string full, string sleep, string cost) => await Models.Flats.PutKv(id, name, full, sleep, cost);
     }
 }
