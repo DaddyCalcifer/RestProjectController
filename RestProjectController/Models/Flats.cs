@@ -99,7 +99,7 @@ namespace RestProjectController.Models
 
                     { "isDeleted", false }});
             }
-            else return "error";
+            else return "Already exists";
             var Flat = await collection.Find(new BsonDocument { { "Name", name }, { "fullFlat", Convert.ToBoolean(full) }, { "SleepPlaces", int.Parse(sleep) }, { "Price", Convert.ToDecimal(cost) }, { "isDeleted", false } }).ToListAsync();
             return Flat.ToJson();
         }

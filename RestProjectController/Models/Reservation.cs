@@ -48,8 +48,9 @@ namespace RestProjectController.Models
 
             if (await collection.CountDocumentsAsync(new BsonDocument { { "flatId", flat_id }, { "ClientID", owner_id }, { "Date", Date }, { "Days", int.Parse(days) } }) == 0)
             {
-                await collection.InsertOneAsync(new BsonDocument { { "flatId", flat_id }, { "ClientID", owner_id }, { "Date", Date }, { "Days", int.Parse(days) }, {"isCancelled",false } });
+                await collection.InsertOneAsync(new BsonDocument { { "flatId", flat_id }, { "ClientID", owner_id }, { "Date", Date }, { "Days", int.Parse(days) }, { "isCancelled", false } });
             }
+            else return "Already Exists";
             var Flat = await collection.Find(new BsonDocument { { "flatId", flat_id }, { "ClientID", owner_id }, { "Date", Date }, { "Days", int.Parse(days) } }).ToListAsync();
             return Flat.ToJson();
         }
