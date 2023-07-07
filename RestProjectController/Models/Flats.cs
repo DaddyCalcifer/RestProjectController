@@ -34,8 +34,6 @@ namespace RestProjectController.Models
         [JsonProperty("isDeleted")]
         public bool isDeleted { get; set; } = false;
 
-        public static Flats FromJSON(string jscode) => JsonConvert.DeserializeObject<Flats>(jscode);
-
         public static async Task<string> Get()
         {
             var db = client.GetDatabase("RestApp");

@@ -1,22 +1,37 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 
 namespace RestProjectController.Models
 {
+    [JsonObject]
     public class Account
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
 
         static MongoClient client = new MongoClient("mongodb://192.168.1.88:1717");
-        public string? Id { get; set; }
+
+        [JsonProperty("_id")]
+        public ObjectId? Id { get; set; }
+
+        [JsonProperty("Name")]
         public string Name { get; set; } = String.Empty!;
+
+        [JsonProperty("Login")]
         public string Login { get; set; } = String.Empty!;
+
+        [JsonProperty("Password")]
         public string Password { get; set; } = String.Empty!;
+
+        [JsonProperty("isDeleted")]
         public bool isDeleted { get; set; } = false;
 
+        [JsonProperty("CreatedAt")]
         public DateTime CreatedAt { get; set; }
+
+        [JsonProperty("PasswordChangedAt")]
         public DateTime PasswordChangedAt { get; set; }
 
         public static async Task<string> Get()
@@ -39,14 +54,35 @@ namespace RestProjectController.Models
         {
             var db = client.GetDatabase("RestApp");
             var collection = db.GetCollection<BsonDocument>("Account");
-            
+
+            if (await collection.CountDocumentsAsync(new BsonDocument { { "Login", login }, {"isDeleted",true } }) == 1)
+            {
+                await collection.UpdateOneAsync(new BsonDocument { { "Login", login } }, Builders<BsonDocument>.Update.Set("Name", name));
+                await collection.UpdateOneAsync(new BsonDocument { { "Login", login } }, Builders<BsonDocument>.Update.Set("Password", password));
+                await collection.UpdateOneAsync(new BsonDocument { { "Login", login } }, Builders<BsonDocument>.Update.Set("CreatedAt", DateTime.Now));
+                await collection.UpdateOneAsync(new BsonDocument { { "Login", login } }, Builders<BsonDocument>.Update.Set("isDeleted", false));
+            }
             if (await collection.CountDocumentsAsync(new BsonDocument { { "Login", login } }) == 0)
             {
-                await collection.InsertOneAsync(new BsonDocument { { "Name", name }, { "Login", login }, { "Password", password }, { "CreatedAt", DateTime.Now}, {"isDeleted", false } });
+                await collection.InsertOneAsync(new BsonDocument { { "Name", name }, { "Login", login }, { "Password", password }, { "CreatedAt", DateTime.Now }, { "isDeleted", false } });
             }
-            var Flat = await collection.Find(new BsonDocument { { "Name", name }, { "Login", login }, { "Password", password } }).ToListAsync();
+            var Flat = await collection.Find(new BsonDocument {{ "Login", login }}).ToListAsync();
             return Flat.ToJson();
         }
+        public static async Task<string> DoLogin(string login, string password)
+        {
+            var db = client.GetDatabase("RestApp");
+            var collection = db.GetCollection<BsonDocument>("Account");
+
+            if (await collection.CountDocumentsAsync(new BsonDocument { { "Login", login }, { "Password", password } }) != 0)
+            {
+                var reserv = await collection.Find(new BsonDocument { { "Login", login }, { "Password", password } }).ToListAsync();
+                string json = reserv.ToJson();
+                return json;
+            }
+            else return "Wrong account data!";
+        }
+
         public static async Task<string> DeleteAcc(string id)
         {
             var db = client.GetDatabase("RestApp");
