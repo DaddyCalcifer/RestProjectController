@@ -24,5 +24,8 @@ namespace RestProjectController.Controllers
 
         [HttpPatch("Delete:{id}")]
         public async Task<string> DeleteAcc(string id) => await Models.Account.DeleteAcc(id);
+
+        [HttpGet("Login/{login}:{password}")]
+        public async Task<string> DoLogin(string login, string password) => await Models.Account.DoLogin(login,password);
     }
 }

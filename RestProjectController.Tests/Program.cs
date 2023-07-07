@@ -7,16 +7,76 @@ namespace RestProjectController.Tests
 {
     public class API_Tests
     {
+        private delegate Task<TestAPI> TestDelegate();
+        class TestFunc
+        {
+            public TestFunc(string name, TestDelegate func)
+            {
+                this.name = name;
+                this.func = func;
+            }
+            public string name;
+            public TestDelegate func;
+        }
         static readonly Uri api_adress = new Uri("https://localhost:5001/");
+        static int current_test = 0;
+        static List<TestFunc> tests = new List<TestFunc>();
         static async Task Main(string[] args)
         {
-            var GetAll = await TestGetAll(); GetAll.Print();
-            var GetByName = await TestGetByName(); GetByName.Print();
-            //var addFlat = await AddFlat(); addFlat.Print();
-            var addExFlat = await AddExistedFlat(); addExFlat.Print();
-            var addReservation = await AddReservation(); addReservation.Print();
-            var cancelReservation = await CancelReservation(); cancelReservation.Print();
+            tests.Add(new TestFunc("End-to-End тестирование", E2E_Test));
+            tests.Add(new TestFunc("Flats.GetAll()",TestGetAll));
+            tests.Add(new TestFunc("Flats.GetByName()", TestGetByName));
+            tests.Add(new TestFunc("Flats.Add()", AddFlat));
+            tests.Add(new TestFunc("Flats.Add(existed)", AddExistedFlat));
+            tests.Add(new TestFunc("Reservations.Add()", AddReservation));
+            tests.Add(new TestFunc("Reservations.Cancel()", CancelReservation));
+
+            PrintTests();
+
+            while (true)
+            {
+                switch(Console.ReadKey().Key)
+                {
+                    case ConsoleKey.UpArrow:
+                        if (current_test > 0)
+                            current_test--;
+                        break;
+
+                    case ConsoleKey.DownArrow:
+                        if (current_test < tests.Count -1)
+                            current_test++;
+                        break;
+
+                    case ConsoleKey.Enter:
+                        Console.Clear();
+                        tests[current_test].func().Result.Print();
+                        Console.ReadKey();
+                        break;
+
+                    case ConsoleKey.Escape:
+                        return;
+                }
+                PrintTests();
+            }
         }
+        static void PrintTests()
+        {
+            Console.Clear();
+            for(int i = 0; i < tests.Count; i++)
+            {
+                if(i == current_test)
+                {
+                    Console.BackgroundColor = ConsoleColor.White;
+                    Console.ForegroundColor = ConsoleColor.Black;
+                }
+                Console.WriteLine(tests[i].name);
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.ForegroundColor = ConsoleColor.White;
+            }
+            Console.WriteLine(Environment.NewLine);
+            Console.Write("Навигация: стрелки \nВыбор: Enter\nВыход: Escape");
+        }
+
         public static async Task<TestAPI> TestGetAll()
         {
             TestAPI result = new TestAPI("Flats.GetAll()");
@@ -25,7 +85,7 @@ namespace RestProjectController.Tests
             client.BaseAddress = api_adress;
             
             
-            HttpResponseMessage response = await client.GetAsync("flats/allы");
+            HttpResponseMessage response = await client.GetAsync("flats/all");
             result.response = response;
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
                 result.result = TestResult.Succes;
@@ -111,7 +171,7 @@ namespace RestProjectController.Tests
         }
         public static async Task<TestAPI> AddReservation()
         {
-            string flat_id = "64a2b29b6d333eeabd9c0f9cы";
+            string flat_id = "64a2b29b6d333eeabd9c0f9c";
             string client_id = "64a040c6601e4d5f061adcd6";
             string date = "2023-07-11";
             int days = 2;
@@ -152,6 +212,90 @@ namespace RestProjectController.Tests
                 result.result = TestResult.Succes;
             else result.result = TestResult.Fail;
 
+
+            return result;
+        }
+
+        public static async Task<TestAPI> E2E_Test()
+        {
+            string login = "e2e_user", name = "Самый обычный пользователь", password = "qazxdrews";
+            string flat_id = "64a2b29b6d333eeabd9c0f9c", user_id = "64a040c6601e4d5f061adcd6", reservation_id = "64a042fa8415247f9cab8cf3";
+            string Date = "2023-09-13"; int days = 5;
+
+            TestAPI result = new TestAPI("E2E [Клиент]");
+            result.Description = "Проверка полного функционала сервиса от лица пользователя";
+            result.response = null;
+
+            HttpClient client = new HttpClient();
+            client.BaseAddress = api_adress;
+
+            //Создание аккаунта
+            HttpResponseMessage reg_response = await client.PostAsync("auth/register/"
+                + name +"/"
+                + login + ":"
+                + password,null);
+
+            var Register = new TestAPI("E2E [Регистрация]");
+            Register.Description = "Создание аккаунта пользователем";
+            Register.response = reg_response;
+
+            if (Register.response.IsSuccessStatusCode) Register.result = TestResult.Succes;
+            else Register.result = TestResult.Fail;
+            Register.Print();
+
+            //Авторизация
+            HttpResponseMessage log_response = await client.GetAsync("autsh/login/"
+                + login + ":" + password);
+
+            var login_ = new TestAPI("E2E [Авторизация]");
+            login_.Description = "Авторизация пользователя в созданный аккаунт";
+            login_.response = log_response;
+            if (login_.response.IsSuccessStatusCode) login_.result = TestResult.Succes;
+            else login_.result = TestResult.Fail;
+            login_.Print();
+
+            //Бронь квартиры
+            HttpResponseMessage booking_response = await client.PostAsync("booking/add/"
+               + flat_id + ":"
+               + user_id + "/"
+               + Date + ":" + days.ToString(), null);
+
+            var booking = new TestAPI("E2E [Бронь квартиры]");
+            booking.Description = "Создание пользователем брони на квартиру";
+            booking.response = booking_response;
+            if (booking.response.IsSuccessStatusCode) booking.result = TestResult.Succes;
+            else booking.result = TestResult.Fail;
+            booking.Print();
+
+            //Отмена брони квартиры
+            HttpResponseMessage cancel_response = await client.PatchAsync("booking/cancel:" + reservation_id, null);
+
+            var cancel = new TestAPI("E2E [Отмена брони квартиры]");
+            cancel.Description = "Отмена пользователем брони на квартиру";
+            cancel.response = cancel_response;
+            if (cancel.response.IsSuccessStatusCode) cancel.result = TestResult.Succes;
+            else cancel.result = TestResult.Fail;
+            cancel.Print();
+
+            //Удаление аккаунта
+            HttpResponseMessage delete_response = await client.PatchAsync("auth/delete:" + user_id, null);
+
+            var delete = new TestAPI("E2E [Удаление аккаунта]");
+            delete.Description = "Удаление пользователем созданного аккаунта";
+            delete.response = delete_response;
+            if (delete.response.IsSuccessStatusCode) delete.result = TestResult.Succes;
+            else delete.result = TestResult.Fail;
+            delete.Print();
+
+
+            //Финал
+            if (Register.response.IsSuccessStatusCode &&
+                login_.response.IsSuccessStatusCode &&
+                booking.response.IsSuccessStatusCode &&
+                cancel.response.IsSuccessStatusCode &&
+                delete.response.IsSuccessStatusCode)
+                result.result = TestResult.Succes;
+            else result.result = TestResult.Fail;
 
             return result;
         }

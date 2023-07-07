@@ -22,7 +22,11 @@ namespace RestProjectController.Tests
 
         public async void Print()
         {
-            var answer = await response.Content.ReadAsStringAsync();
+            string answer = "...";
+
+            if(response != null)
+                answer = await response.Content.ReadAsStringAsync();
+
             Console.Write("Тест: ");
             Console.ForegroundColor = ConsoleColor.DarkGreen; Console.Write(this.Name + Environment.NewLine);
             Console.ForegroundColor = ConsoleColor.White; Console.Write("Описание: ");
@@ -30,7 +34,12 @@ namespace RestProjectController.Tests
             Console.ForegroundColor = ConsoleColor.White; Console.Write("Результат запроса: " + Environment.NewLine);
             Console.ForegroundColor = ConsoleColor.Gray; Console.Write(answer + Environment.NewLine);
             Console.ForegroundColor = ConsoleColor.White; Console.Write("Статус HTTP: ");
-            Console.ForegroundColor = ConsoleColor.Yellow; Console.Write(response.StatusCode+ Environment.NewLine);
+            Console.ForegroundColor = ConsoleColor.Yellow;
+
+            if (response != null)
+                Console.Write(response.StatusCode + Environment.NewLine);
+            else Console.Write("Нет данных" + Environment.NewLine);
+
             Console.ForegroundColor = ConsoleColor.White; Console.Write("Результат теста: ");
             switch(result)
             {
