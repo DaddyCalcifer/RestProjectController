@@ -5,7 +5,7 @@ services:
     container_name: mongo_container
     restart: always
     ports:
-      - "1717:27017"
+      - "27017:27017"
     volumes:
       - ./mongodata:/data/db
     command: --wiredTigerCacheSizeGB 1.5
