@@ -11,7 +11,7 @@ namespace RestProjectController.Models
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
 
-        static MongoClient client = new MongoClient("mongodb://192.168.1.88:1717");
+        static MongoClient client = new MongoClient("mongodb://192.168.1.88:27017");
 
         [JsonProperty("_id")]
         public ObjectId? Id { get; set; }

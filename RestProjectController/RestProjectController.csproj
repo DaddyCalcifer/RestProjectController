@@ -9,10 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="mongodata\**" />
-    <Content Remove="mongodata\**" />
-    <EmbeddedResource Remove="mongodata\**" />
-    <None Remove="mongodata\**" />
+    
   </ItemGroup>
 
   <ItemGroup>
