@@ -172,7 +172,6 @@ namespace RestProjectController.Tests
         public static async Task<TestAPI> AddReservation()
         {
             string flat_id = "64a2b29b6d333eeabd9c0f9c";
-            string client_id = "64a040c6601e4d5f061adcd6";
             string date = "2023-07-11";
             int days = 2;
 
@@ -181,10 +180,12 @@ namespace RestProjectController.Tests
             HttpClient client = new HttpClient();
             client.BaseAddress = api_adress;
 
+            HttpResponseMessage reg_response = await client.GetAsync("auth/unitTest:12345678");
+            string jwt = await reg_response.Content.ReadAsStringAsync();
+            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + jwt);
 
             HttpResponseMessage response = await client.PostAsync("booking/add/" +
-                flat_id + ":" +
-                client_id + "/" +
+                flat_id + "/" +
                 date + ":" +
                 days,
                 null);
@@ -199,12 +200,15 @@ namespace RestProjectController.Tests
         }
         public static async Task<TestAPI> CancelReservation()
         {
-            string reservation_id = "64a703a40b0b602d78971897";
+            string reservation_id = "64ac46772045341e948646a5";
             TestAPI result = new TestAPI("Reservations.Cancel()");
             result.Description = "Функция отмены брони на квартиру";
             HttpClient client = new HttpClient();
             client.BaseAddress = api_adress;
 
+            HttpResponseMessage reg_response = await client.GetAsync("auth/unitTest:12345678");
+            string jwt = await reg_response.Content.ReadAsStringAsync();
+            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + jwt);
 
             HttpResponseMessage response = await client.PatchAsync("booking/cancel:" + reservation_id, null);
             result.response = response;
@@ -221,6 +225,7 @@ namespace RestProjectController.Tests
             string login = "e2e_user", name = "Самый обычный пользователь", password = "qazxdrews";
             string flat_id = "64a2b29b6d333eeabd9c0f9c", user_id = "64a040c6601e4d5f061adcd6", reservation_id = "64a042fa8415247f9cab8cf3";
             string Date = "2023-09-13"; int days = 5;
+            string jwt = "";
 
             TestAPI result = new TestAPI("E2E [Клиент]");
             result.Description = "Проверка полного функционала сервиса от лица пользователя";
@@ -244,21 +249,23 @@ namespace RestProjectController.Tests
             Register.Print();
 
             //Авторизация
-            HttpResponseMessage log_response = await client.GetAsync("autsh/login/"
+            HttpResponseMessage log_response = await client.GetAsync("auth/"
                 + login + ":" + password);
 
             var login_ = new TestAPI("E2E [Авторизация]");
             login_.Description = "Авторизация пользователя в созданный аккаунт";
             login_.response = log_response;
+            jwt = await log_response.Content.ReadAsStringAsync();
             if (login_.response.IsSuccessStatusCode) login_.result = TestResult.Succes;
             else login_.result = TestResult.Fail;
             login_.Print();
+            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + jwt);
 
             //Бронь квартиры
             HttpResponseMessage booking_response = await client.PostAsync("booking/add/"
-               + flat_id + ":"
-               + user_id + "/"
-               + Date + ":" + days.ToString(), null);
+               + flat_id + "/"
+               + Date + ":" 
+               + days.ToString(), null);
 
             var booking = new TestAPI("E2E [Бронь квартиры]");
             booking.Description = "Создание пользователем брони на квартиру";
@@ -278,7 +285,7 @@ namespace RestProjectController.Tests
             cancel.Print();
 
             //Удаление аккаунта
-            HttpResponseMessage delete_response = await client.PatchAsync("auth/delete:" + user_id, null);
+            HttpResponseMessage delete_response = await client.PatchAsync("auth/delete", null);
 
             var delete = new TestAPI("E2E [Удаление аккаунта]");
             delete.Description = "Удаление пользователем созданного аккаунта";
