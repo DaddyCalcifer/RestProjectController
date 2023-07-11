@@ -124,6 +124,9 @@ namespace RestProjectController.Tests
             HttpClient client = new HttpClient();
             client.BaseAddress = api_adress;
 
+            HttpResponseMessage reg_response = await client.GetAsync("auth/unitTest:12345678");
+            string jwt = await reg_response.Content.ReadAsStringAsync();
+            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + jwt);
 
             HttpResponseMessage response = await client.PostAsync("flats/add/" + 
                 name + "/" + 
@@ -151,6 +154,11 @@ namespace RestProjectController.Tests
             result.Description = "Функция добавления уже существующего жилья в базу";
             HttpClient client = new HttpClient();
             client.BaseAddress = api_adress;
+
+
+            HttpResponseMessage reg_response = await client.GetAsync("auth/unitTest:12345678");
+            string jwt = await reg_response.Content.ReadAsStringAsync();
+            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + jwt);
 
 
             HttpResponseMessage response = await client.PostAsync("flats/add/" +

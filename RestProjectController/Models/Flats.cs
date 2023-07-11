@@ -74,7 +74,7 @@ namespace RestProjectController.Models
             var Flat = await collection.Find(new BsonDocument { { "fullFlat", Convert.ToBoolean(val) } , { "isDeleted", false } }).ToListAsync();
             return Flat.ToJson();
         }
-        public static async Task<string> AddKv(string name, string full, string sleep, string cost)
+        public static async Task<string> AddKv(string name, string full, string sleep, string cost, string addedBy = "[null]")
         {
             var db = client.GetDatabase("RestApp");
             var collection = db.GetCollection<BsonDocument>("Flats");
@@ -92,6 +92,7 @@ namespace RestProjectController.Models
                     { "fullFlat", Convert.ToBoolean(full) },
                     { "SleepPlaces", int.Parse(sleep) },
                     { "Price", Convert.ToDecimal(cost) },
+                    { "CreatedBy", addedBy },
                     { "CreationDate", DateTime.Now },
                     { "EditedDate", DateTime.Now },
 

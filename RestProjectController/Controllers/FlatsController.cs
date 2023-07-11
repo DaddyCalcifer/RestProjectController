@@ -25,12 +25,19 @@ namespace RestProjectController.Controllers
         [HttpGet("ByFull:{val}")]
         public async Task<string> GetByFull(string val) => await Models.Flats.GetByFull(val);
 
-        [HttpPost("Add/{name}/{full}/{sleep}/{cost}")]
-        public async Task<string> AddKv(string name,string full, string sleep, string cost) => await Models.Flats.AddKv(name, full, sleep, cost);
-        [HttpPatch("Delete:{id}")]
+
+
+        [HttpPost("Add/{name}/{full}/{sleep}/{cost}"), Authorize]
+        public async Task<string> AddKv(string name, string full, string sleep, string cost, [FromHeader(Name = "Authorization")] string jwt)
+        {
+            string username = Models.Account.GetNameJWT(jwt);
+            return await Models.Flats.AddKv(name, full, sleep, cost, username);
+        }
+
+        [HttpPatch("Delete:{id}"), Authorize]
         public async Task<string> DeleteKv(string id) => await Models.Flats.DeleteKv(id);
 
-        [HttpPatch("Update:{id};{name};{full};{sleep};{cost}")]
+        [HttpPatch("Update:{id};{name};{full};{sleep};{cost}"), Authorize]
         public async Task<string> PutKv(string id, string name, string full, string sleep, string cost) => await Models.Flats.PutKv(id, name, full, sleep, cost);
     }
 }
