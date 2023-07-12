@@ -231,7 +231,7 @@ namespace RestProjectController.Tests
         public static async Task<TestAPI> E2E_Test()
         {
             string login = "e2e_user", name = "Самый обычный пользователь", password = "qazxdrews";
-            string flat_id = "64a2b29b6d333eeabd9c0f9c", user_id = "64a040c6601e4d5f061adcd6", reservation_id = "64a042fa8415247f9cab8cf3";
+            string flat_id = "64a2b29b6d333eeabd9c0f9c", user_id = "64a040c6601e4d5f061adcd6", reservation_id = "64abe2c4103c656e5f6b34ea";
             string Date = "2023-09-13"; int days = 5;
             string jwt = "";
 

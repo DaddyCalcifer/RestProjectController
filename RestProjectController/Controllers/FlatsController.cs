@@ -13,31 +13,27 @@ namespace RestProjectController.Controllers
             return "xd";
         }
         [HttpGet("all")]
-        public async Task<string> Get() => await Models.Flats.Get();
+        public async Task<string> Get() => await Services.FlatService.Get();
 
         [HttpGet("ByName:{name}")]
-        public async Task<string> GetByName(string name) => await Models.Flats.GetByName(name);
+        public async Task<string> GetByName(string name) => await Services.FlatService.GetByName(name);
         [HttpGet("{id}")]
-        public async Task<string> GetByIndex(string id) => await Models.Flats.GetByID(id);
+        public async Task<string> GetByIndex(string id) => await Services.FlatService.GetByID(id);
 
         [HttpGet("BySleep:{count}")]
-        public async Task<string> GetBySP(string count) => await Models.Flats.GetBySP(count);
+        public async Task<string> GetBySP(string count) => await Services.FlatService.GetBySP(count);
         [HttpGet("ByFull:{val}")]
-        public async Task<string> GetByFull(string val) => await Models.Flats.GetByFull(val);
+        public async Task<string> GetByFull(string val) => await Services.FlatService.GetByFull(val);
 
 
 
         [HttpPost("Add/{name}/{full}/{sleep}/{cost}"), Authorize]
-        public async Task<string> AddKv(string name, string full, string sleep, string cost, [FromHeader(Name = "Authorization")] string jwt)
-        {
-            string username = Models.Account.GetNameJWT(jwt);
-            return await Models.Flats.AddKv(name, full, sleep, cost, username);
-        }
+        public async Task<string> AddKv(string name, string full, string sleep, string cost, [FromHeader(Name = "Authorization")] string jwt) => await Services.FlatService.AddKv(name, full, sleep, cost, Services.AuthService.GetNameJWT(jwt));
 
         [HttpPatch("Delete:{id}"), Authorize]
-        public async Task<string> DeleteKv(string id) => await Models.Flats.DeleteKv(id);
+        public async Task<string> DeleteKv(string id) => await Services.FlatService.DeleteKv(id);
 
         [HttpPatch("Update:{id};{name};{full};{sleep};{cost}"), Authorize]
-        public async Task<string> PutKv(string id, string name, string full, string sleep, string cost) => await Models.Flats.PutKv(id, name, full, sleep, cost);
+        public async Task<string> PutKv(string id, string name, string full, string sleep, string cost) => await Services.FlatService.PutKv(id, name, full, sleep, cost); 
     }
 }
