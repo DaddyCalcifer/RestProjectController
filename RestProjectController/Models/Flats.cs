@@ -32,5 +32,7 @@ namespace RestProjectController.Models
 
         [JsonProperty("isDeleted")]
         public bool isDeleted { get; set; } = false;
+
+        public string AddedBy { get; set; } = null!;
     }
 }

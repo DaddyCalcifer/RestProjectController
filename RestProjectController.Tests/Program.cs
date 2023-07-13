@@ -96,7 +96,7 @@ namespace RestProjectController.Tests
         }
         public static async Task<TestAPI> TestGetByName()
         {
-            string name = "test_kv";
+            string name = "Новая квартира [23]";
             TestAPI result = new TestAPI("Flats.GetByName()");
             result.Description = "Функция получения JSON файла с квартирами по имени";
             HttpClient client = new HttpClient();
@@ -128,10 +128,10 @@ namespace RestProjectController.Tests
             string jwt = await reg_response.Content.ReadAsStringAsync();
             client.DefaultRequestHeaders.Add("Authorization", "Bearer " + jwt);
 
-            HttpResponseMessage response = await client.PostAsync("flats/add/" + 
-                name + "/" + 
-                full.ToString() + "/" + 
-                sleep.ToString() + "/" + 
+            HttpResponseMessage response = await client.PostAsync("flats/add:" + 
+                name + ";" + 
+                full.ToString() + ";" + 
+                sleep.ToString() + ";" + 
                 cost.ToString(), 
                 null);
 
@@ -161,10 +161,10 @@ namespace RestProjectController.Tests
             client.DefaultRequestHeaders.Add("Authorization", "Bearer " + jwt);
 
 
-            HttpResponseMessage response = await client.PostAsync("flats/add/" +
-                name + "/" +
-                full.ToString() + "/" +
-                sleep.ToString() + "/" +
+            HttpResponseMessage response = await client.PostAsync("flats/add:" +
+                name + ";" +
+                full.ToString() + ";" +
+                sleep.ToString() + ";" +
                 cost.ToString(),
                 null);
 
@@ -179,9 +179,9 @@ namespace RestProjectController.Tests
         }
         public static async Task<TestAPI> AddReservation()
         {
-            string flat_id = "64a2b29b6d333eeabd9c0f9c";
-            string date = "2023-07-11";
-            int days = 2;
+            string flat_id = "64ae91ff964074ef70ddc576";
+            string fromDate = "2023-09-11";
+            string tillDate = "2023-09-15";
 
             TestAPI result = new TestAPI("Reservations.Add()");
             result.Description = "Функция добавления брони на квартиру";
@@ -194,8 +194,8 @@ namespace RestProjectController.Tests
 
             HttpResponseMessage response = await client.PostAsync("booking/add/" +
                 flat_id + "/" +
-                date + ":" +
-                days,
+                fromDate + ":" +
+                tillDate,
                 null);
 
             result.response = response;
@@ -231,8 +231,8 @@ namespace RestProjectController.Tests
         public static async Task<TestAPI> E2E_Test()
         {
             string login = "e2e_user", name = "Самый обычный пользователь", password = "qazxdrews";
-            string flat_id = "64a2b29b6d333eeabd9c0f9c", user_id = "64a040c6601e4d5f061adcd6", reservation_id = "64abe2c4103c656e5f6b34ea";
-            string Date = "2023-09-13"; int days = 5;
+            string flat_id = "64afeba9931e51943421cd24", reservation_id = "64affa68641ec874261eb274";
+            string fromDate = "2023-09-14"; string tillDate = "2023-09-30";
             string jwt = "";
 
             TestAPI result = new TestAPI("E2E [Клиент]");
@@ -272,8 +272,8 @@ namespace RestProjectController.Tests
             //Бронь квартиры
             HttpResponseMessage booking_response = await client.PostAsync("booking/add/"
                + flat_id + "/"
-               + Date + ":" 
-               + days.ToString(), null);
+               + fromDate + ":" 
+               + tillDate, null);
 
             var booking = new TestAPI("E2E [Бронь квартиры]");
             booking.Description = "Создание пользователем брони на квартиру";

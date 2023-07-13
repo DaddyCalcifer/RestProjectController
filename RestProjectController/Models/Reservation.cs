@@ -13,8 +13,8 @@ namespace RestProjectController.Models
 
         public ObjectId flatId { get; set; } = ObjectId.Empty!;
         public DateTime fromDate { get; set; }
-        public int Days = 0!;
-        public ObjectId ClientID { get; set; } = ObjectId.Empty!;
+        public DateTime tillDate { get; set; }
+        public string ClientID { get; set; } = String.Empty!;
         public bool isCancelled { get; set; } = false!;
     }
 }

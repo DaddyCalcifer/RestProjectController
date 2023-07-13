@@ -20,17 +20,29 @@ namespace RestProjectController.Controllers
         [HttpGet("{id}")]
         public async Task<string> GetByIndex(string id) => await Services.BookingService.GetByID(id);
 
-        [HttpPost("Add/{flat_id}/{date}:{days}"), Authorize]
-        public async Task<string> Reserve(string flat_id, [FromHeader(Name = "Authorization")] string jwt, string date, string days)
+        [HttpPost("Add/{flat_id}/{fromDate}:{tillDate}"), Authorize]
+        public async Task<string> Reserve(string flat_id, string fromDate, string tillDate, [FromHeader(Name = "Authorization")] string jwt)
         {
-            string username = Services.AuthService.GetNameJWT(jwt);
-            return await Services.BookingService.Reserve(ObjectId.Parse(flat_id), username, DateTime.Parse(date), days);
+            var jwtdata = DataJWT.Parse(jwt);
+            DateTime fromDate_parsed, tillDate_parsed; ObjectId flat_id_parsed;
+            if (DateTime.TryParse(fromDate, out fromDate_parsed) && DateTime.TryParse(tillDate, out tillDate_parsed) && ObjectId.TryParse(flat_id, out flat_id_parsed))
+            {
+                Models.Reservation reserv = new Models.Reservation();
+                reserv.flatId = flat_id_parsed;
+                reserv.ClientID = jwtdata.Name;
+                reserv.fromDate = fromDate_parsed;
+                reserv.tillDate = tillDate_parsed;
+
+                if(tillDate_parsed > fromDate_parsed)
+                return await Services.BookingService.Reserve(reserv);
+            }
+            return "400 - Bad request";
         }
         [HttpPatch("Cancel:{id}"), Authorize]
         public async Task<string> Cancel(string id, [FromHeader(Name = "Authorization")] string jwt)
         {
-            string username = Services.AuthService.GetNameJWT(jwt);
-            return await Services.BookingService.Cancel(username, ObjectId.Parse(id));
+            var data = DataJWT.Parse(jwt);
+            return await Services.BookingService.Cancel(data, ObjectId.Parse(id));
         }
     }
 }

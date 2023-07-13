@@ -42,65 +42,63 @@ namespace RestProjectController.Services
             var Flat = await collection.Find(new BsonDocument { { "fullFlat", Convert.ToBoolean(val) }, { "isDeleted", false } }).ToListAsync();
             return Flat.ToJson();
         }
-        public static async Task<string> AddKv(string name, string full, string sleep, string cost, string addedBy = "[null]")
+        public static async Task<string> AddKv(Models.Flats flat)
         {
             var collection = AppOptions.db.GetCollection<BsonDocument>("Flats");
 
-            bool test; int sl_test; decimal cost_test;
-
-            if (bool.TryParse(full, out test) == false) return "error";
-            if (int.TryParse(sleep, out sl_test) == false) return "error";
-            if (decimal.TryParse(cost, out cost_test) == false) return "error";
-
-            if (await collection.CountDocumentsAsync(new BsonDocument { { "Name", name }, { "fullFlat", Convert.ToBoolean(full) }, { "SleepPlaces", int.Parse(sleep) }, { "Price", Convert.ToDecimal(cost) } }) == 0)
+            if (await collection.CountDocumentsAsync(new BsonDocument { { "Name", flat.Name }, { "fullFlat", flat.fullFlat }, { "SleepPlaces", flat.SleepPlaces }, { "Price", flat.Price } }) == 0)
             {
                 await collection.InsertOneAsync(new BsonDocument {
-                    { "Name", name },
-                    { "fullFlat", Convert.ToBoolean(full) },
-                    { "SleepPlaces", int.Parse(sleep) },
-                    { "Price", Convert.ToDecimal(cost) },
-                    { "CreatedBy", addedBy },
-                    { "CreationDate", DateTime.Now },
-                    { "EditedDate", DateTime.Now },
+                    { "Name", flat.Name },
+                    { "fullFlat", flat.fullFlat },
+                    { "SleepPlaces", flat.SleepPlaces },
+                    { "Price", flat.Price },
+                    { "CreatedBy", flat.AddedBy },
+                    { "CreationDate", flat.CreationDate },
+                    { "EditedDate", flat.EditedDate },
 
                     { "isDeleted", false }});
             }
             else return "Already exists";
-            var Flat = await collection.Find(new BsonDocument { { "Name", name }, { "fullFlat", Convert.ToBoolean(full) }, { "SleepPlaces", int.Parse(sleep) }, { "Price", Convert.ToDecimal(cost) }, { "isDeleted", false } }).ToListAsync();
+            var Flat = await collection.Find(new BsonDocument { { "Name", flat.Name }, { "fullFlat", flat.fullFlat }, { "SleepPlaces", flat.SleepPlaces }, { "Price", flat.Price }, { "isDeleted", false } }).ToListAsync();
             return Flat.ToJson();
         }
-        public static async Task<string> DeleteKv(string id)
+        public static async Task<string> DeleteKv(DataJWT jwt, string id)
         {
             var collection = AppOptions.db.GetCollection<BsonDocument>("Flats");
 
             if (await collection.CountDocumentsAsync(new BsonDocument { { "_id", ObjectId.Parse(id) } }) != 0)
             {
-                await collection.UpdateOneAsync(new BsonDocument { { "_id", ObjectId.Parse(id) } }, Builders<BsonDocument>.Update.Set("isDeleted", true));
+                BsonDocument doc = collection.Find(new BsonDocument { { "_id", ObjectId.Parse(id) } }).FirstOrDefault();
+
+                if (doc["CreatedBy"] == jwt.Name || jwt.Role == "Admin")
+                    await collection.UpdateOneAsync(new BsonDocument { { "_id", ObjectId.Parse(id) } }, Builders<BsonDocument>.Update.Set("isDeleted", true));
+                else return "403 - Forbidden";
             }
             var Flat = await collection.Find(new BsonDocument { { "_id", ObjectId.Parse(id) } }).ToListAsync();
             return Flat.ToJson();
         }
-        public static async Task<string> PutKv(string id, string name, string full, string sleep, string cost)
+        public static async Task<string> PutKv(DataJWT jwt, Models.Flats new_flat)
         {
             var collection = AppOptions.db.GetCollection<BsonDocument>("Flats");
 
-            if (await collection.CountDocumentsAsync(new BsonDocument { { "_id", ObjectId.Parse(id) } }) != 0)
+            if (await collection.CountDocumentsAsync(new BsonDocument { { "_id", new_flat.Id } }) != 0)
             {
-                if (name != String.Empty)
-                    await collection.UpdateOneAsync(new BsonDocument { { "_id", ObjectId.Parse(id) } }, Builders<BsonDocument>.Update.Set("Name", name));
+                BsonDocument doc = collection.Find(new BsonDocument { { "_id", new_flat.Id } }).FirstOrDefault();
 
-                if (full != null)
-                    await collection.UpdateOneAsync(new BsonDocument { { "_id", ObjectId.Parse(id) } }, Builders<BsonDocument>.Update.Set("fullFlat", full));
-
-                if (sleep != null)
-                    await collection.UpdateOneAsync(new BsonDocument { { "_id", ObjectId.Parse(id) } }, Builders<BsonDocument>.Update.Set("SleepPlaces", sleep));
-
-                if (cost != null)
-                    await collection.UpdateOneAsync(new BsonDocument { { "_id", ObjectId.Parse(id) } }, Builders<BsonDocument>.Update.Set("Price", cost));
-
-                await collection.UpdateOneAsync(new BsonDocument { { "_id", ObjectId.Parse(id) } }, Builders<BsonDocument>.Update.Set("EditedDate", DateTime.Now));
+                if (doc["CreatedBy"] == jwt.Name || jwt.Role == "Admin")
+                    await collection.ReplaceOneAsync(new BsonDocument { { "_id", new_flat.Id } }, new BsonDocument {
+                    { "Name", new_flat.Name },
+                    {"fullFlat", new_flat.fullFlat },
+                    {"SleepPlaces", new_flat.SleepPlaces },
+                    {"Price", new_flat.Price },
+                    { "CreatedBy", doc["CreatedBy"] },
+                    { "CreationDate", doc["CreationDate"] },
+                    {"EditedDate", DateTime.Now },
+                    { "isDeleted", doc["isDeleted"] },});
+                else return "403 - Forbidden";
             }
-            var Flat = await collection.Find(new BsonDocument { { "_id", ObjectId.Parse(id) } }).ToListAsync();
+            var Flat = await collection.Find(new BsonDocument { { "_id", new_flat.Id } }).ToListAsync();
             return Flat.ToJson();
         }
     }

@@ -13,6 +13,7 @@ namespace RestProjectController.Services
             var reserv = await collection.Find("{}").ToListAsync();
             return reserv.ToJson();
         }
+
         public static async Task<string> GetByID(string id)
         {
             var collection = AppOptions.db.GetCollection<BsonDocument>("Reservations");
@@ -20,34 +21,37 @@ namespace RestProjectController.Services
             var reserv = await collection.Find(new BsonDocument("_id", ObjectId.Parse(id))).ToListAsync();
             return reserv.ToJson();
         }
-        public static async Task<string> Reserve(ObjectId flat_id, string owner_login, DateTime Date, string days)
+
+        public static async Task<string> Reserve(Models.Reservation reservation)
         {
             var collection = AppOptions.db.GetCollection<BsonDocument>("Reservations");
 
-            var users = AppOptions.db.GetCollection<BsonDocument>("Account");
             var flats = AppOptions.db.GetCollection<BsonDocument>("Flats");
 
-            if (await users.CountDocumentsAsync(new BsonDocument { { "Login", owner_login } }) == 0) return "Error: Wrong user id";
-            if (await flats.CountDocumentsAsync(new BsonDocument { { "_id", flat_id } }) == 0) return "Error: Wrong flat id";
-            if (int.Parse(days) < 1) return "Error: Wrong days value";
+            if (await flats.CountDocumentsAsync(new BsonDocument { { "_id", reservation.flatId } }) == 0) return "404 - Not found";
 
-            if (await collection.CountDocumentsAsync(new BsonDocument { { "flatId", flat_id }, { "ClientID", owner_login }, { "Date", Date }, { "Days", int.Parse(days) } }) == 0)
+            if (await collection.CountDocumentsAsync(new BsonDocument { { "flatId", reservation.flatId }, { "ClientID", reservation.ClientID }, { "fromDate", reservation.fromDate }, { "tillDate", reservation.tillDate } }) == 0)
             {
-                await collection.InsertOneAsync(new BsonDocument { { "flatId", flat_id }, { "ClientID", owner_login }, { "Date", Date }, { "Days", int.Parse(days) }, { "isCancelled", false } });
+                await collection.InsertOneAsync(new BsonDocument { { "flatId", reservation.flatId }, { "ClientID", reservation.ClientID }, { "fromDate", reservation.fromDate }, { "tillDate", reservation.tillDate }, { "isCancelled", false } });
             }
-            else return "Already Exists";
-            var Flat = await collection.Find(new BsonDocument { { "flatId", flat_id }, { "ClientID", owner_login }, { "Date", Date }, { "Days", int.Parse(days) } }).ToListAsync();
+            else return "400 - Bad request";
+            var Flat = await collection.Find(new BsonDocument { { "flatId", reservation.flatId }, { "ClientID", reservation.ClientID }, { "fromDate", reservation.fromDate }, { "tillDate", reservation.tillDate } }).ToListAsync();
             return Flat.ToJson();
         }
-        public static async Task<string> Cancel(string user, ObjectId id)
+
+        public static async Task<string> Cancel(DataJWT jwt, ObjectId id)
         {
             var collection = AppOptions.db.GetCollection<BsonDocument>("Reservations");
 
-            if (await collection.CountDocumentsAsync(new BsonDocument { { "_id", id }, { "ClientID", user } }) != 0)
+            if (await collection.CountDocumentsAsync(new BsonDocument { { "_id", id }}) != 0)
             {
-                await collection.UpdateOneAsync(new BsonDocument { { "_id", id } }, Builders<BsonDocument>.Update.Set("isCancelled", true));
+                BsonDocument doc = collection.Find(new BsonDocument { { "_id", id } }).FirstOrDefault();
+
+                if ((string)doc["ClientID"] == jwt.Name || jwt.Role == "Admin")
+                    await collection.UpdateOneAsync(new BsonDocument { { "_id", id } }, Builders<BsonDocument>.Update.Set("isCancelled", true));
+                else return "403 - Forbidden";
             }
-            else return "Wrong data!";
+            else return "400 - Bad request";
             var reserv = await collection.Find(new BsonDocument { { "_id", id } }).ToListAsync();
             return reserv.ToJson();
         }
